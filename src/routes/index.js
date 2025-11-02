@@ -3,7 +3,9 @@ import authRoutes from "./auth.routes.js";
 import userRoutes from "./user.routes.js";
 import onboardingRoutes from "./onboarding.routes.js";
 import teamSelectionRoutes from "./teamSelection.routes.js";
-import clientRoutes from "./client.routes.js";
+import consultantRoutes from "./consultant.routes.js";
+import faqRoutes from "./faq.routes.js";
+import blogRoutes from "./blog.routes.js";
 import { env } from "../config/index.js";
 
 const router = express.Router();
@@ -13,7 +15,10 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/onboarding", onboardingRoutes);
 router.use("/teams", teamSelectionRoutes);
-router.use("/client", clientRoutes);
+router.use("/consultant", consultantRoutes);
+router.use("/faq", faqRoutes);
+router.use("/blog", blogRoutes);
+
 
 // Health check route
 router.get("/health", (req, res) => {

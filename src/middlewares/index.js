@@ -1,6 +1,6 @@
 // Export all middlewares
 import { auth } from "./auth.middleware.js";
-import { isAdmin } from "./isAdmin.middleware.js";
+import { isAdmin } from "./admin.middleware.js";
 import errorHandler from "./error.middleware.js";
 import notFoundHandler from "./notFound.middleware.js";
 import {

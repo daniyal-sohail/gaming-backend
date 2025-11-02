@@ -1,5 +1,5 @@
 import Blog from "../models/blog.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.util.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/index.js";
 
 const createBlog = async (authorId, data, filePath) => {

@@ -5,7 +5,7 @@ const searchConsultants = async (requirements = {}, { page = 1, limit = 10, sort
     const { skills, minExperience, preferredTimezone, remote, maxHourlyRate } = requirements;
 
     // Build filter query
-    const filter = { approved: true }; // Only show approved consultants
+    const filter = { status: "approved" }; // Only show approved consultants
 
     // Filter by skills
     if (skills && skills.length > 0) {
@@ -64,14 +64,14 @@ const getConsultantDetails = async (consultantId) => {
         });
 
     if (!consultant) throw new ApiError(404, "Consultant not found");
-    if (!consultant.approved) throw new ApiError(404, "Consultant not available");
+    if (consultant.status != "approved") throw new ApiError(404, "Consultant not available");
 
     return consultant;
 };
 
 const getFeaturedConsultants = async ({ limit = 10 } = {}) => {
     const consultants = await Consultant.find({
-        approved: true,
+        status: "approved",
         visibility: "public"
     })
         .populate({
@@ -90,7 +90,7 @@ const getConsultantsBySkills = async (skills, { limit = 20 } = {}) => {
     }
 
     const consultants = await Consultant.find({
-        approved: true,
+        status: "approved",
         skills: { $in: skills },
         visibility: "public"
     })
@@ -106,7 +106,7 @@ const getConsultantsBySkills = async (skills, { limit = 20 } = {}) => {
 
 const getConsultantsByExperience = async (minExperience, { limit = 20 } = {}) => {
     const consultants = await Consultant.find({
-        approved: true,
+        status: "approved",
         experienceYears: { $gte: minExperience },
         visibility: "public"
     })
@@ -124,7 +124,7 @@ const getAllConsultants = async ({ page = 1, limit = 20, sort = "-createdAt" } =
     const skip = (page - 1) * limit;
 
     const consultants = await Consultant.find({
-        approved: true,
+        status: "approved",
         visibility: "public"
     })
         .populate({
@@ -136,7 +136,7 @@ const getAllConsultants = async ({ page = 1, limit = 20, sort = "-createdAt" } =
         .limit(limit);
 
     const total = await Consultant.countDocuments({
-        approved: true,
+        status: "approved",
         visibility: "public"
     });
 
@@ -149,13 +149,63 @@ const getAllConsultants = async ({ page = 1, limit = 20, sort = "-createdAt" } =
     };
 };
 
-const ClientService = {
+
+
+const adminGetAllConsultants = async () => {
+    const consultants = await Consultant.find()
+        .populate({ path: "user", select: "name email user_type isVerified" })
+        .sort("-createdAt");
+    return consultants;
+};
+
+const adminApproveConsultant = async (consultantId, adminId, level) => {
+    const consultant = await Consultant.findById(consultantId);
+    if (!consultant) throw new ApiError(404, "Consultant not found");
+
+    consultant.approved = true;
+    consultant.status = "approved";
+    consultant.approvedAt = new Date();
+    consultant.approvedBy = adminId;
+    if (level) consultant.level = level;
+
+    await consultant.save();
+    return consultant;
+};
+
+const adminDisapproveConsultant = async (consultantId, adminId) => {
+    const consultant = await Consultant.findById(consultantId);
+    if (!consultant) throw new ApiError(404, "Consultant not found");
+
+    consultant.approved = false;
+    consultant.status = "disapproved";
+    consultant.approvedBy = adminId;
+
+    await consultant.save();
+    return consultant;
+};
+
+const getConsultantApprovalStatus = async (userId) => {
+    const consultant = await Consultant.findOne({ user: userId });
+    if (!consultant) throw new ApiError(404, "Consultant profile not found");
+
+    return {
+        status: consultant.status,
+        approved: consultant.approved,
+        level: consultant.level,
+    };
+};
+
+const consultantService = {
     searchConsultants,
     getConsultantDetails,
     getFeaturedConsultants,
     getConsultantsBySkills,
     getConsultantsByExperience,
-    getAllConsultants
+    getAllConsultants,
+    adminGetAllConsultants,
+    adminApproveConsultant,
+    adminDisapproveConsultant,
+    getConsultantApprovalStatus
 };
 
-export default ClientService;
+export default consultantService;

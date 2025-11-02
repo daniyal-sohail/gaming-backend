@@ -62,6 +62,11 @@ const consultantSchema = new Schema(
         locations: [{ type: String, trim: true }],
         cv: { type: String },
         portfolioLinks: [{ type: String }],
+        status: {
+            type: String,
+            enum: ["pending", "approved", "disapproved"],
+            default: "pending",
+        },
         approved: {
             type: Boolean,
             default: false,
