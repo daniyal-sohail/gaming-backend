@@ -2,35 +2,50 @@ import { ApiError } from "../utils/index.js";
 
 export const validate = (schema, source = 'body') => {
     return (req, res, next) => {
-        const dataToValidate = req[source];
+        try {
+            // Check if req.body is undefined or null when validating body
+            if (source === 'body' && (!req.body || typeof req.body !== 'object')) {
+                const error = new ApiError(400, 'Request body is missing or invalid. Please ensure you are sending JSON data with Content-Type: application/json header.');
+                return next(error);
+            }
 
-        const { error, value } = schema.validate(dataToValidate, {
-            abortEarly: false,
-            allowUnknown: true,
-            stripUnknown: true
-        });
+            // Get the data to validate
+            let dataToValidate = req[source];
 
-        if (error) {
-            const errorDetails = error.details.map(detail => ({
-                field: detail.path.join('.'),
-                message: detail.message,
-                value: detail.context.value
-            }));
+            const { error, value } = schema.validate(dataToValidate, {
+                abortEarly: false,
+                allowUnknown: true,
+                stripUnknown: true
+            });
 
-            const validationError = new ApiError(400, 'Validation Error');
-            validationError.details = errorDetails;
-            return next(validationError);
+            if (error) {
+                const errorDetails = error.details.map(detail => ({
+                    field: detail.path.join('.'),
+                    message: detail.message,
+                    value: detail.context?.value
+                }));
+
+                const validationError = new ApiError(400, 'Validation Error');
+                validationError.details = errorDetails;
+                return next(validationError);
+            }
+
+
+            // Only assign validated values to 'body' and 'params'
+            if (source === 'body') {
+                req.body = value;
+            } else if (source === 'params') {
+                req.params = value;
+            }
+
+            next();
+        } catch (err) {
+            next(new ApiError(500, `Validation error: ${err.message}`));
         }
-
-        req[source] = value;
-        next();
     };
 };
 
 export const validateBody = (schema) => validate(schema, 'body');
-
 export const validateParams = (schema) => validate(schema, 'params');
-
 export const validateQuery = (schema) => validate(schema, 'query');
-
 export const validateHeaders = (schema) => validate(schema, 'headers');

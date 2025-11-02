@@ -12,21 +12,36 @@ import { env } from "./config/index.js";
 
 const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CLIENT_URL || process.env.ADMIN_URL || "")
+// Build allowed origins from environment variables
+const envOrigins = (env.CORS_ORIGINS || env.CLIENT_URL || env.ADMIN_URL || "")
     .split(",")
     .map((s) => s.trim())
-    .filter(Boolean)
-    .concat(["http://localhost:3000", "http://localhost:3001"])
-    .filter((v, i, arr) => arr.indexOf(v) === i);
+    .filter(Boolean);
 
+// Default development origins
+const defaultOrigins = ["http://localhost:3000", "http://localhost:3001"];
+
+// Combine and deduplicate
+const allowedOrigins = [...new Set([...envOrigins, ...defaultOrigins])];
+
+console.log("CORS allowed origins:", allowedOrigins);
 
 app.use(
     cors({
         origin: (origin, cb) => {
+            // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return cb(null, true);
-            return allowedOrigins.includes(origin)
-                ? cb(null, true)
-                : cb(new Error(`CORS blocked: ${origin} is not in allowlist`));
+
+            // Check if origin is in allowed list
+            if (allowedOrigins.includes(origin)) {
+                return cb(null, true);
+            }
+
+            // Log blocked origins for debugging
+            console.log(`CORS blocked: ${origin} is not in allowlist`);
+            console.log("Allowed origins:", allowedOrigins);
+
+            return cb(new Error(`CORS blocked: ${origin} is not in allowlist`));
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -34,19 +49,18 @@ app.use(
     })
 );
 
-// helmet → browser protection via headers.
-app.use(helmet());
-// xssClean → block JavaScript injection.
-app.use(xssClean());
-// mongoSanitize → block database injection
-app.use(mongoSanitize());
-
-app.use(cookieParser(process.env.COOKIE_SECRET));
+// CRITICAL: Body parsers MUST come early, before other middleware
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(cookieParser(env.COOKIE_SECRET));
 
+// helmet → browser protection via headers
+app.use(helmet());
 
+// mongoSanitize → block database injection
+// app.use(mongoSanitize());
 
+// Morgan for development logging
 if (env.NODE_ENV === "development") {
     try {
         const morgan = (await import("morgan")).default;
@@ -56,10 +70,12 @@ if (env.NODE_ENV === "development") {
     }
 }
 
-if (env.NODE_ENV === "production" || process.env.TRUST_PROXY === "1") {
+// Trust proxy settings
+if (env.NODE_ENV === "production" || env.TRUST_PROXY === "1") {
     app.set("trust proxy", 1);
 }
 
+// Rate limiting
 const limiter = rateLimit({
     windowMs: Number(env.RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
     max: Number(env.RATE_LIMIT_MAX_REQUESTS ?? 100),
@@ -69,8 +85,10 @@ const limiter = rateLimit({
 });
 app.use("/api/v1", limiter);
 
+// Routes
 app.use("/api/v1", routes);
 
+// Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 

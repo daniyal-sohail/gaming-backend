@@ -21,12 +21,39 @@ export const updateProfileSchema = Joi.object({
             'string.pattern.base': 'Please provide a valid phone number'
         }),
 
-    language_preference: Joi.string()
-        .valid('english', 'spanish', 'french')
+    email: Joi.string()
+        .email()
+        .lowercase()
+        .trim()
         .optional()
         .messages({
-            'any.only': 'Language preference must be one of: english, spanish, french'
+            'string.email': 'Please provide a valid email address'
+        }),
+
+    currentPassword: Joi.string()
+        .optional()
+        .messages({
+            'string.empty': 'Current password is required when changing password'
+        }),
+
+    newPassword: Joi.string()
+        .min(6)
+        .max(128)
+        .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
+        .optional()
+        .messages({
+            'string.min': 'New password must be at least 6 characters long',
+            'string.max': 'New password cannot exceed 128 characters',
+            'string.pattern.base': 'New password must contain at least one uppercase letter, one lowercase letter, and one number'
         })
+}).custom((value, helpers) => {
+    // If one password field is provided, both must be provided
+    if ((value.currentPassword && !value.newPassword) || (!value.currentPassword && value.newPassword)) {
+        return helpers.error('custom.passwordBoth');
+    }
+    return value;
+}).messages({
+    'custom.passwordBoth': 'Both current password and new password are required when changing password'
 });
 
 // User ID validation (for params)

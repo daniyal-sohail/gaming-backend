@@ -36,25 +36,11 @@ export const registerSchema = Joi.object({
         }),
 
     user_type: Joi.string()
-        .valid('client', 'consultant', 'admin')
-        .default('client')
+        .valid('client', 'consultant')
+        .required()
         .messages({
-            'any.only': 'User type must be one of: client, consultant, admin'
-        }),
-
-    phone: Joi.string()
-        .trim()
-        .pattern(new RegExp('^[+]?[1-9]\\d{1,14}$'))
-        .optional()
-        .messages({
-            'string.pattern.base': 'Please provide a valid phone number'
-        }),
-
-    language_preference: Joi.string()
-        .valid('english', 'spanish', 'french')
-        .default('english')
-        .messages({
-            'any.only': 'Language preference must be one of: english, spanish, french'
+            'any.only': 'User type must be either "client" (hire consultants) or "consultant" (offer services)',
+            'any.required': 'User type is required. Choose "client" or "consultant"'
         })
 });
 
@@ -83,6 +69,32 @@ export const refreshTokenSchema = Joi.object({
         .required()
         .messages({
             'string.empty': 'Refresh token is required'
+        })
+});
+
+// Google registration validation
+export const googleRegisterSchema = Joi.object({
+    idToken: Joi.string()
+        .required()
+        .messages({
+            'string.empty': 'Google ID token is required'
+        }),
+
+    user_type: Joi.string()
+        .valid('client', 'consultant')
+        .required()
+        .messages({
+            'any.only': 'User type must be either "client" (hire consultants) or "consultant" (offer services)',
+            'any.required': 'User type is required. Choose "client" or "consultant"'
+        })
+});
+
+// Google login validation
+export const googleLoginSchema = Joi.object({
+    idToken: Joi.string()
+        .required()
+        .messages({
+            'string.empty': 'Google ID token is required'
         })
 });
 

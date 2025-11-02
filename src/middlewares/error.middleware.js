@@ -1,4 +1,5 @@
 import { ApiResponse, ApiError } from "../utils/index.js";
+import { env } from "../config/index.js";
 
 const errorHandler = (err, req, res, _next) => {
     const isApiErr = err instanceof ApiError;
@@ -37,7 +38,7 @@ const errorHandler = (err, req, res, _next) => {
     if (details) {
         payload.details = details;
     }
-    if (process.env.NODE_ENV !== "production" && err?.stack) {
+    if (env.NODE_ENV !== "production" && err?.stack) {
         payload.stack = err.stack;
     }
 

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { env } from "./index.js";
 
 let isConnected = false;
 
@@ -9,11 +10,11 @@ export const connectDB = async () => {
             return mongoose.connection;
         }
 
-        const uri = process.env.MONGO_URI;
+        const uri = env.MONGO_URI;
         if (!uri) throw new Error("MONGO_URI is missing");
 
         mongoose.set("strictQuery", true);
-        if (process.env.NODE_ENV === "production") {
+        if (env.NODE_ENV === "production") {
             mongoose.set("autoIndex", false);
         }
 
