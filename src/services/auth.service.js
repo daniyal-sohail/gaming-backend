@@ -31,7 +31,7 @@ const registerUser = async ({ name, email, password, user_type }) => {
         password: password, // Let Mongoose middleware handle hashing
         user_type,
         oauthProvider: "local",
-        isVerified: false,
+        isVerified: true,
     });
 
     if (user_type === "client") {
@@ -41,8 +41,8 @@ const registerUser = async ({ name, email, password, user_type }) => {
         await Consultant.create({ user: user._id });
     }
 
-    const token = generateEmailVerificationToken(user._id);
-    await sendVerificationEmail(user.email, user.name, token);
+    // const token = generateEmailVerificationToken(user._id);
+    // await sendVerificationEmail(user.email, user.name, token);
 
     return { user };
 };

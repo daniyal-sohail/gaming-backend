@@ -49,10 +49,18 @@ const updateProfile = async (userId, updateData) => {
                 throw new ApiError(400, "Email already in use");
             }
 
-            const token = generateEmailVerificationToken(userId, email);
-            await sendEmailChangeVerification(email, user.name, token);
+            // Update email directly since verification is disabled
+            await User.findByIdAndUpdate(
+                userId,
+                { $set: { email: email, isVerified: true } },
+                { new: true, runValidators: true }
+            );
+            result.emailUpdated = true;
 
-            result.emailVerificationSent = true;
+            // const token = generateEmailVerificationToken(userId, email);
+            // await sendEmailChangeVerification(email, user.name, token);
+
+            // result.emailVerificationSent = true;
         }
     }
 
